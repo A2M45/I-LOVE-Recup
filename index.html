@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="Vous avez supprimer par erreur un document, une image, ce logiciel est fait pour vous
+!">
+    <title>Récupération de fichiers supprimés</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .resultats {
+            margin-top: 20px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        .resultats h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .resultats ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .resultats li {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .resultats a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+        .resultats a:hover {
+            text-decoration: underline;
+        }
+        .resultats button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .resultats button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Récupération de fichiers supprimés</h1>
+    <form id="analyseForm">
+        <label for="device">Sélectionnez un périphérique :</label>
+        <select id="device" name="device" required>
+            <!-- Les périphériques seront ajoutés dynamiquement par JavaScript -->
+        </select>
+        <button type="submit">Lancer l'analyse</button>
+    </form>
+
+    <div class="resultats" id="resultats" style="display: none;">
+        <h2>Fichiers récupérés</h2>
+        <ul id="fichiersListe">
+            <!-- Les fichiers récupérés seront ajoutés ici -->
+        </ul>
+    </div>
+
+    <script>
+        // Charger la liste des périphériques au démarrage
+        fetch("analyser.sh")
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById("device");
+                data.peripheriques.forEach(peripherique => {
+                    const option = document.createElement("option");
+                    option.value = peripherique;
+                    option.textContent = peripherique;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error("Erreur :", error);
+            });
+
+        // Soumettre le formulaire
+        document.getElementById("analyseForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const device = document.getElementById("device").value;
+
+            // Afficher un message de chargement
+            const resultatsDiv = document.getElementById("resultats");
+            resultatsDiv.style.display = "block";
+            resultatsDiv.innerHTML = "<h2>Analyse en cours...</h2>";
+
+            // Envoyer une requête au serveur pour lancer l'analyse
+            fetch("/cgi-bin/analyser.sh?device=" + encodeURIComponent(device))
+                .then(response => response.json())
+                .then(data => {
+                    const fichiersListe = document.getElementById("fichiersListe");
+                    fichiersListe.innerHTML = ""; // Effacer la liste précédente
+                    data.fichiers.forEach(fichier => {
+                        const li = document.createElement("li");
+                        li.textContent = fichier;
+                        const bouton = document.createElement("button");
+                        bouton.textContent = "Télécharger";
+                        bouton.onclick = () => {
+                            window.location.href = "/recuperes/" + fichier;
+                        };
+                        li.appendChild(bouton);
+                        fichiersListe.appendChild(li);
+                    });
+                    resultatsDiv.innerHTML = "<h2>Fichiers récupérés</h2>";
+                    resultatsDiv.appendChild(fichiersListe);
+                })
+                .catch(error => {
+                    console.error("Erreur :", error);
+                    resultatsDiv.innerHTML = "<h2>Erreur lors de l'analyse.</h2>";
+                });
+        });
+    </script>
+</body>
+</html>
